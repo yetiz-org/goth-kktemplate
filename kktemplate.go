@@ -9,8 +9,8 @@ import (
 	"sync"
 	text "text/template"
 
-	"github.com/kklab-com/goth-kklogger"
-	"github.com/kklab-com/goth-kktranslation"
+	"github.com/yetiz-org/goth-kklogger"
+	"github.com/yetiz-org/goth-kktranslation"
 )
 
 var TemplateRootPath = "./resources/template"
