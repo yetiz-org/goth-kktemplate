@@ -6,10 +6,10 @@ toolchain go1.24.0
 
 require (
 	github.com/yetiz-org/goth-kklogger v1.2.8
-	github.com/yetiz-org/goth-kktranslation v0.0.0-20250611123742-961c7c57f25d
+	github.com/yetiz-org/goth-kktranslation v1.1.0
 )
 
 require (
-	gopkg.in/yaml.v2 v2.2.7 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
