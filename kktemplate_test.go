@@ -19,7 +19,10 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/yetiz-org/goth-kktranslation"
 
 	html "html/template"
 	text "text/template"
@@ -84,6 +87,41 @@ func resetGlobals(t *testing.T, newRoot string) {
 		textTemplateMap = oldText
 		frameExist = oldFrameExist
 		FuncMap = oldFuncMap
+	})
+}
+
+func withTempTranslationRoot(t *testing.T) string {
+	t.Helper()
+	root := filepath.Join(t.TempDir(), "resources", "translation")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatalf("mkdir temp translation root: %v", err)
+	}
+	return root
+}
+
+func writeTranslationFile(t *testing.T, root, lang, content string) string {
+	t.Helper()
+	path := filepath.Join(root, strings.ToLower(lang)+".yaml")
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write translation file: %v", err)
+	}
+	return path
+}
+
+func resetTranslationGlobals(t *testing.T, newRoot string, translateFallback bool, defaultLang string) {
+	t.Helper()
+	oldRoot := kktranslation.LangRootPath
+	oldFallback := kktranslation.TranslateFallback
+	oldDefaultLang := kktranslation.DefaultLang
+
+	kktranslation.LangRootPath = newRoot
+	kktranslation.TranslateFallback = translateFallback
+	kktranslation.DefaultLang = defaultLang
+
+	t.Cleanup(func() {
+		kktranslation.LangRootPath = oldRoot
+		kktranslation.TranslateFallback = oldFallback
+		kktranslation.DefaultLang = oldDefaultLang
 	})
 }
 
@@ -383,6 +421,138 @@ func TestLoadFrameHtml_Basic(t *testing.T) {
 		t.Fatalf("ExecuteTemplate: %v", err)
 	}
 	if got, want := buf.String(), "page->_main"; got != want {
+		t.Fatalf("output mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestLoadHtml_TranslateFunc_Basic(t *testing.T) {
+	root := withTempTemplateRoot(t)
+	resetGlobals(t, root)
+	t.Setenv("KKAPP_DEBUG", "TRUE")
+
+	translationRoot := withTempTranslationRoot(t)
+	resetTranslationGlobals(t, translationRoot, true, "default")
+
+	writeTranslationFile(t, translationRoot, "en", "version: \"1\"\nlang: \"en\"\nname: \"English\"\ndict:\n  hello: \"HELLO\"\n")
+	writeTemplateFile(t, root, "default", "hello", "{{T \"hello\"}}")
+
+	tmpl, err := LoadHtml("hello", "en-US")
+	if err != nil {
+		t.Fatalf("LoadHtml: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, nil); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got, want := buf.String(), "HELLO"; got != want {
+		t.Fatalf("output mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestLoadText_TranslateFunc_Basic(t *testing.T) {
+	root := withTempTemplateRoot(t)
+	resetGlobals(t, root)
+	t.Setenv("KKAPP_DEBUG", "TRUE")
+
+	translationRoot := withTempTranslationRoot(t)
+	resetTranslationGlobals(t, translationRoot, true, "default")
+
+	writeTranslationFile(t, translationRoot, "en", "version: \"1\"\nlang: \"en\"\nname: \"English\"\ndict:\n  hello: \"HELLO\"\n")
+	writeTemplateFile(t, root, "default", "hello", "{{T \"hello\"}}")
+
+	tmpl, err := LoadText("hello", "en-US")
+	if err != nil {
+		t.Fatalf("LoadText: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, nil); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got, want := buf.String(), "HELLO"; got != want {
+		t.Fatalf("output mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestLoadHtml_TranslateFunc_FallbackToDefaultLang(t *testing.T) {
+	root := withTempTemplateRoot(t)
+	resetGlobals(t, root)
+	t.Setenv("KKAPP_DEBUG", "TRUE")
+
+	translationRoot := withTempTranslationRoot(t)
+	resetTranslationGlobals(t, translationRoot, true, "default")
+
+	writeTranslationFile(t, translationRoot, "en", "version: \"1\"\nlang: \"en\"\nname: \"English\"\ndict:\n  hello: \"HELLO\"\n")
+	writeTranslationFile(t, translationRoot, "default", "version: \"1\"\nlang: \"default\"\nname: \"Default\"\ndict:\n  bye: \"GOODBYE\"\n")
+	writeTemplateFile(t, root, "default", "hello", "{{T \"bye\"}}")
+
+	tmpl, err := LoadHtml("hello", "en-US")
+	if err != nil {
+		t.Fatalf("LoadHtml: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, nil); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got, want := buf.String(), "GOODBYE"; got != want {
+		t.Fatalf("output mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestLoadHtml_TranslateFunc_NoFallbackWhenDisabled(t *testing.T) {
+	root := withTempTemplateRoot(t)
+	resetGlobals(t, root)
+	t.Setenv("KKAPP_DEBUG", "TRUE")
+
+	translationRoot := withTempTranslationRoot(t)
+	resetTranslationGlobals(t, translationRoot, false, "default")
+
+	writeTranslationFile(t, translationRoot, "en", "version: \"1\"\nlang: \"en\"\nname: \"English\"\ndict:\n  hello: \"HELLO\"\n")
+	writeTranslationFile(t, translationRoot, "default", "version: \"1\"\nlang: \"default\"\nname: \"Default\"\ndict:\n  bye: \"GOODBYE\"\n")
+	writeTemplateFile(t, root, "default", "hello", "{{T \"bye\"}}")
+
+	tmpl, err := LoadHtml("hello", "en-US")
+	if err != nil {
+		t.Fatalf("LoadHtml: %v", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, nil); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got, want := buf.String(), "bye"; got != want {
+		t.Fatalf("output mismatch: got %q want %q", got, want)
+	}
+}
+
+func TestLoadFrameHtml_TranslateFunc_Basic(t *testing.T) {
+	root := withTempTemplateRoot(t)
+	resetGlobals(t, root)
+	t.Setenv("KKAPP_DEBUG", "TRUE")
+
+	translationRoot := withTempTranslationRoot(t)
+	resetTranslationGlobals(t, translationRoot, true, "default")
+
+	writeTranslationFile(t, translationRoot, "en", "version: \"1\"\nlang: \"en\"\nname: \"English\"\ndict:\n  hello: \"HELLO\"\n")
+
+	for _, frame := range StructTemplateFrames {
+		content := frame
+		if frame == "_main" {
+			content = "{{T \"hello\"}}"
+		}
+		writeTemplateFile(t, root, "default", frame, content)
+	}
+
+	pagePath := writeTemplateFile(t, root, "default", "page", "page->{{template \"_main.tmpl\"}}")
+
+	tmpl, err := LoadFrameHtml("page", "en-US")
+	if err != nil {
+		t.Fatalf("LoadFrameHtml: %v", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, filepath.Base(pagePath), nil); err != nil {
+		t.Fatalf("ExecuteTemplate: %v", err)
+	}
+	if got, want := buf.String(), "page->HELLO"; got != want {
 		t.Fatalf("output mismatch: got %q want %q", got, want)
 	}
 }
