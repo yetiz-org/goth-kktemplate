@@ -1,7 +1,7 @@
 github.com/yetiz-org/goth-kklogger v1.2.8 h1:Q6G4kSDfXZ8TmkBoAW9jd6o8+XKOI0ElAo1y56wUIr8=
 github.com/yetiz-org/goth-kklogger v1.2.8/go.mod h1:xOJb2U5Aj/JnBjXjgC+Q2eyE/9waFirMkVYYtyg9Gyc=
-github.com/yetiz-org/goth-kktranslation v1.2.0 h1:5NXJ2fgvmJyny3qejxr1W7p8SovqTlNmhuSw8bJD6b8=
-github.com/yetiz-org/goth-kktranslation v1.2.0/go.mod h1:zT/j9ICMaTlQl2E9IBb244+mNA/YtjhrSg4zYmNuzRk=
+github.com/yetiz-org/goth-kktranslation v1.2.1 h1:omQBxLBwYN/G5lYMBAoS/hHQJU19wJAOvk0eDm/EoBk=
+github.com/yetiz-org/goth-kktranslation v1.2.1/go.mod h1:zT/j9ICMaTlQl2E9IBb244+mNA/YtjhrSg4zYmNuzRk=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
